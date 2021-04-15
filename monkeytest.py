@@ -17,6 +17,7 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import json
 import os
 import sys
+import tempfile
 
 ASCIIART = r'''Brought to you by coding monkeys.
 Eat bananas, drink coffee & enjoy!
@@ -92,6 +93,11 @@ class Benchmark:
     def clear_line():
         print('\033[2K', end='')
 
+    @property
+    def is_tmpfs(self):
+        tmpfs = tempfile.gettempdir()
+        return os.path.commonpath([os.path.abspath(self.file), tmpfs]) == tmpfs
+
     def write_test(self, block_size, blocks_count, show_progress=True):
         '''
         Tests write speed by writing random blocks, at total quantity
@@ -122,7 +128,10 @@ class Benchmark:
         bytes until the End Of File reached.
         Returns a list of read times in sec of each block.
         '''
-        f = os.open(self.file, flags=os.O_RDONLY | os.O_DIRECT)  # low-level I/O
+        flags = os.O_RDONLY;
+        if not self.is_tmpfs:
+            flags |= os.O_DIRECT
+        f = os.open(self.file, flags=flags)  # low-level I/O
         # generate random read positions
         offsets = list(range(0, blocks_count * block_size, block_size))
         shuffle(offsets)
