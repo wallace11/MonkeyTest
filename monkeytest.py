@@ -98,7 +98,7 @@ class Benchmark:
         of blocks_count, each at size of block_size bytes to disk.
         Function returns a list of write times in sec of each block.
         '''
-        f = os.open(self.file, flags=os.O_CREAT | os.O_WRONLY)  # low-level I/O
+        f = os.open(self.file, flags=os.O_CREAT | os.O_WRONLY | os.O_SYNC)  # low-level I/O
 
         took = []
         for i in range(blocks_count):
@@ -108,7 +108,6 @@ class Benchmark:
             buff = os.urandom(block_size)
             start = time()
             os.write(f, buff)
-            os.fsync(f)  # force write to disk
             t = time() - start
             took.append(t)
 
@@ -123,7 +122,7 @@ class Benchmark:
         bytes until the End Of File reached.
         Returns a list of read times in sec of each block.
         '''
-        f = os.open(self.file, flags=os.O_RDONLY)  # low-level I/O
+        f = os.open(self.file, flags=os.O_RDONLY | os.O_DIRECT)  # low-level I/O
         # generate random read positions
         offsets = list(range(0, blocks_count * block_size, block_size))
         shuffle(offsets)
