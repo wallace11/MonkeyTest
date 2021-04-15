@@ -9,17 +9,14 @@ and deleted, so the script doesn't waste your drive
 
 (!) Be sure, that the file you point to is not something
     you need, cause it'll be overwritten during test
-
-Runs on both Python3 and 2, despite that I prefer 3
-Has been tested on 3.5 and 2.7 under ArchLinux
-Has been tested on 3.5.2 under Ubuntu Xenial
 '''
-from __future__ import division, print_function  # for compatability with py2
 
-import os, sys
 from random import shuffle
+from time import perf_counter as time
 import argparse
 import json
+import os
+import sys
 
 ASCIIART = r'''Brought to you by coding monkeys.
 Eat bananas, drink coffee & enjoy!
@@ -43,14 +40,6 @@ Eat bananas, drink coffee & enjoy!
 # it seems that its original author is Mic Barendsz (mic aka miK)
 # text-image is a bit old (1999) so I couldn't find a way to communicate with author
 # if You're reading this and You're an author -- feel free to write me
-
-try:  # if Python >= 3.3 use new high-res counter
-    from time import perf_counter as time
-except ImportError:  # else select highest available resolution counter
-    if sys.platform[:3] == 'win':
-        from time import clock as time
-    else:
-        from time import time
 
 
 def get_args():
