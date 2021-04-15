@@ -152,14 +152,14 @@ class Benchmark:
             'written_mb': self.write_mb,
             'write_time': round(sum(self.write_results), 4),
             'write_speed': round(self.write_mb / sum(self.write_results), 2),
-            'write_speed_min': round(self.write_block_kb / (1024 * min(self.write_results)), 2),
-            'write_speed_max': round(self.write_block_kb / (1024 * max(self.write_results)), 2),
+            'write_speed_min': round(self.write_block_kb / (1024 * max(self.write_results)), 2),
+            'write_speed_max': round(self.write_block_kb / (1024 * min(self.write_results)), 2),
             'read_blocks': len(self.read_results),
             'block_size': self.read_block_b,
             'read_time': round(sum(self.read_results), 4),
             'read_speed': round(self.write_mb / sum(self.read_results), 2),
-            'read_speed_min': round(self.read_block_b / (1024 * 1024 * min(self.read_results)), 2),
-            'read_speed_max': round(self.read_block_b / (1024 * 1024 * max(self.read_results)), 2),
+            'read_speed_min': round(self.read_block_b / (1024 * 1024 * max(self.read_results)), 2),
+            'read_speed_max': round(self.read_block_b / (1024 * 1024 * min(self.read_results)), 2),
         }
 
     def print_result(self):
