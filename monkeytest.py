@@ -88,6 +88,10 @@ class Benchmark:
             1024 * self.write_block_kb, wr_blocks)
         self.read_results = self.read_test(self.read_block_b, rd_blocks)
 
+    @staticmethod
+    def clear_line():
+        print('\033[2K', end='')
+
     def write_test(self, block_size, blocks_count, show_progress=True):
         '''
         Tests write speed by writing random blocks, at total quantity
@@ -99,10 +103,8 @@ class Benchmark:
         took = []
         for i in range(blocks_count):
             if show_progress:
-                # dirty trick to actually print progress on each iteration
-                sys.stdout.write('\rWriting: {:.2f} %'.format(
-                    (i + 1) * 100 / blocks_count))
-                sys.stdout.flush()
+                print('Writing: {:.2f} %'.format((i + 1) * 100 / blocks_count),
+                      end='\r')
             buff = os.urandom(block_size)
             start = time()
             os.write(f, buff)
@@ -111,6 +113,7 @@ class Benchmark:
             took.append(t)
 
         os.close(f)
+        self.clear_line()
         return took
 
     def read_test(self, block_size, blocks_count, show_progress=True):
@@ -130,9 +133,8 @@ class Benchmark:
             if show_progress and i % int(
                     self.write_block_kb * 1024 / self.read_block_b) == 0:
                 # read is faster than write, so try to equalize print period
-                sys.stdout.write('\rReading: {:.2f} %'.format(
-                    (i + 1) * 100 / blocks_count))
-                sys.stdout.flush()
+                print('Reading: {:.2f} %'.format((i + 1) * 100 / blocks_count),
+                      end='\r')
             start = time()
             os.lseek(f, offset, os.SEEK_SET)  # set position
             buff = os.read(f, block_size)  # read from position
@@ -142,38 +144,40 @@ class Benchmark:
             took.append(t)
 
         os.close(f)
+        self.clear_line()
         return took
 
+    @property
+    def results(self):
+        return {
+            'written_mb': self.write_mb,
+            'write_time': round(sum(self.write_results), 4),
+            'write_speed': round(self.write_mb / sum(self.write_results), 2),
+            'write_speed_min': round(self.write_block_kb / (1024 * min(self.write_results)), 2),
+            'write_speed_max': round(self.write_block_kb / (1024 * max(self.write_results)), 2),
+            'read_blocks': len(self.read_results),
+            'block_size': self.read_block_b,
+            'read_time': round(sum(self.read_results), 4),
+            'read_speed': round(self.write_mb / sum(self.read_results), 2),
+            'read_speed_min': round(self.read_block_b / (1024 * 1024 * min(self.read_results)), 2),
+            'read_speed_max': round(self.read_block_b / (1024 * 1024 * max(self.read_results)), 2),
+        }
+
     def print_result(self):
-        result = ('\n\nWritten {} MB in {:.4f} s\nWrite speed is  {:.2f} MB/s'
-                  '\n  max: {max:.2f}, min: {min:.2f}\n'.format(
-                      self.write_mb, sum(
-                          self.write_results), self.write_mb / sum(self.write_results),
-                      max=self.write_block_kb /
-                      (1024 * min(self.write_results)),
-                      min=self.write_block_kb / (1024 * max(self.write_results))))
-        result += ('\nRead {} x {} B blocks in {:.4f} s\nRead speed is  {:.2f} MB/s'
-                   '\n  max: {max:.2f}, min: {min:.2f}\n'.format(
-                       len(self.read_results), self.read_block_b,
-                       sum(self.read_results), self.write_mb /
-                       sum(self.read_results),
-                       max=self.read_block_b /
-                       (1024 * 1024 * min(self.read_results)),
-                       min=self.read_block_b / (1024 * 1024 * max(self.read_results))))
-        print(result)
+        result = ['Written {written_mb} MB in {write_time} s',
+                  'Write speed is  {write_speed} MB/s',
+                  '  max: {write_speed_max}, min: {write_speed_min}',
+                  '\t',
+                  'Read {read_blocks} x {block_size} B blocks in {read_time} s',
+                  'Read speed is {read_speed} MB/s',
+                  '  max: {read_speed_max}, min: {read_speed_min}']
+        result = '\n'.join(result).format(**self.results)
+        print(result, end='\n\n')
         print(ASCIIART)
 
     def get_json_result(self, output_file):
-        results_json = {
-            'Written MB': self.write_mb,
-            'Write time (sec)': round(sum(self.write_results), 2),
-            'Write speed in MB/s': round(self.write_mb / sum(self.write_results), 2),
-            'Read blocks': len(self.read_results),
-            'Read time (sec)': round(sum(self.read_results), 2),
-            'Read speed in MB/s': round(self.write_mb / sum(self.read_results), 2)
-        }
         with open(output_file, 'w') as f:
-            json.dump(results_json, f)
+            json.dump(self.results, f)
 
 
 def main():
