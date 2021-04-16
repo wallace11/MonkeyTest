@@ -111,7 +111,7 @@ class Benchmark:
             if show_progress:
                 print('Writing: {:.2f} %'.format((i + 1) * 100 / blocks_count),
                       end='\r')
-            buff = os.urandom(block_size)
+            buff = bytearray(block_size)
             start = time()
             os.write(f, buff)
             t = time() - start
