@@ -11,6 +11,7 @@ and deleted, so the script doesn't waste your drive
     you need, cause it'll be overwritten during test
 '''
 
+import re
 from random import shuffle
 from time import perf_counter as time
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
@@ -43,6 +44,16 @@ Eat bananas, drink coffee & enjoy!
 # if You're reading this and You're an author -- feel free to write me
 
 
+def str_to_bytes(size):
+    units = {'B': 1, 'KB': 2**10, 'MB': 2**20, 'GB': 2**30, 'TB': 2**40}
+    try:
+        number, unit = re.match(r'^(\d+(?:\.\d+)?)\s?([KMGT]?B)?',
+                                size.upper()).groups()
+        return int(float(number) * units.get(unit, 'B'))
+    except AttributeError:
+        return None
+
+
 def get_args():
     common_params = {
         'required': False,
@@ -55,19 +66,19 @@ def get_args():
                         help='The file to read/write to',
                         **common_params)
     parser.add_argument('-s', '--size',
-                        type=int,
-                        default=128,
-                        help='Total MB to write',
+                        type=str_to_bytes,
+                        default='128MB',
+                        help='Total size to write',
                         **common_params)
     parser.add_argument('-w', '--write-block-size',
-                        type=int,
-                        default=1024,
-                        help='The block size for writing in bytes',
+                        type=str_to_bytes,
+                        default='1MB',
+                        help='The block size for writing',
                         **common_params)
     parser.add_argument('-r', '--read-block-size',
-                        type=int,
-                        default=512,
-                        help='The block size for reading in bytes',
+                        type=str_to_bytes,
+                        default='512B',
+                        help='The block size for reading',
                         **common_params)
     parser.add_argument('-j', '--json',
                         help='Output to json file',
@@ -78,16 +89,15 @@ def get_args():
 
 class Benchmark:
 
-    def __init__(self, file, write_mb, write_block_kb, read_block_b):
+    def __init__(self, file, write, write_block, read_block):
         self.file = file
-        self.write_mb = write_mb
-        self.write_block_kb = write_block_kb
-        self.read_block_b = read_block_b
-        wr_blocks = int(self.write_mb * 1024 / self.write_block_kb)
-        rd_blocks = int(self.write_mb * 1024 * 1024 / self.read_block_b)
-        self.write_results = self.write_test(
-            1024 * self.write_block_kb, wr_blocks)
-        self.read_results = self.read_test(self.read_block_b, rd_blocks)
+        self.write = write
+        self.write_block = write_block
+        self.read_block = read_block
+        wr_blocks, rd_blocks = map(lambda x: int(self.write / x),
+                                   (self.write_block, self.read_block))
+        self.write_results = self.write_test(self.write_block, wr_blocks)
+        self.read_results = self.read_test(self.read_block, rd_blocks)
 
     @staticmethod
     def clear_line():
@@ -97,6 +107,10 @@ class Benchmark:
     def is_tmpfs(self):
         tmpfs = tempfile.gettempdir()
         return os.path.commonpath([os.path.abspath(self.file), tmpfs]) == tmpfs
+
+    @staticmethod
+    def convert_results(result, ndigits=2):
+        return round(result / 1024 ** 2, ndigits)
 
     def write_test(self, block_size, blocks_count, show_progress=True):
         '''
@@ -138,8 +152,7 @@ class Benchmark:
 
         took = []
         for i, offset in enumerate(offsets, 1):
-            if show_progress and i % int(
-                    self.write_block_kb * 1024 / self.read_block_b) == 0:
+            if show_progress and i % int(self.write_block * 1024 / self.read_block) == 0:
                 # read is faster than write, so try to equalize print period
                 print('Reading: {:.2f} %'.format((i + 1) * 100 / blocks_count),
                       end='\r')
@@ -158,17 +171,17 @@ class Benchmark:
     @property
     def results(self):
         return {
-            'written_mb': self.write_mb,
+            'written_mb': self.convert_results(self.write, 0),
             'write_time': round(sum(self.write_results), 4),
-            'write_speed': round(self.write_mb / sum(self.write_results), 2),
-            'write_speed_min': round(self.write_block_kb / (1024 * max(self.write_results)), 2),
-            'write_speed_max': round(self.write_block_kb / (1024 * min(self.write_results)), 2),
+            'write_speed': self.convert_results(self.write / sum(self.write_results)),
+            'write_speed_min': self.convert_results(self.write_block / max(self.write_results)),
+            'write_speed_max': self.convert_results(self.write_block / min(self.write_results)),
             'read_blocks': len(self.read_results),
-            'block_size': self.read_block_b,
+            'block_size': self.read_block,
             'read_time': round(sum(self.read_results), 4),
-            'read_speed': round(self.write_mb / sum(self.read_results), 2),
-            'read_speed_min': round(self.read_block_b / (1024 * 1024 * max(self.read_results)), 2),
-            'read_speed_max': round(self.read_block_b / (1024 * 1024 * min(self.read_results)), 2),
+            'read_speed': self.convert_results(self.write / sum(self.read_results)),
+            'read_speed_max': self.convert_results(self.read_block / min(self.read_results)),
+            'read_speed_min': self.convert_results(self.read_block / max(self.read_results))
         }
 
     def print_result(self):
@@ -191,9 +204,10 @@ class Benchmark:
 def main():
     args = get_args()
     benchmark = Benchmark(file=args.file,
-                          write_mb=args.size,
-                          write_block_kb=args.write_block_size,
-                          read_block_b=args.read_block_size)
+                          write=args.size,
+                          write_block=args.write_block_size,
+                          read_block=args.read_block_size)
+
     if args.json is not None:
         benchmark.get_json_result(args.json)
     else:
