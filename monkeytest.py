@@ -152,8 +152,7 @@ class Benchmark:
 
         took = []
         for i, offset in enumerate(offsets, 1):
-            if show_progress and i % int(self.write_block * 1024 / self.read_block) == 0:
-                # read is faster than write, so try to equalize print period
+            if show_progress:
                 print('Reading: {:.2f} %'.format((i + 1) * 100 / blocks_count),
                       end='\r')
             start = time()
