@@ -135,7 +135,7 @@ class Benchmark:
         self.clear_line()
         return took
 
-    def read_test(self, block_size, blocks_count, show_progress=True):
+    def read_test(self, block_size, blocks_count, show_progress=True, randomize=True):
         '''
         Performs read speed test by reading random offset blocks from
         file, at maximum of blocks_count, each at size of block_size
@@ -146,9 +146,11 @@ class Benchmark:
         if not self.is_tmpfs:
             flags |= os.O_DIRECT
         f = os.open(self.file, flags=flags)  # low-level I/O
-        # generate random read positions
         offsets = list(range(0, blocks_count * block_size, block_size))
-        shuffle(offsets)
+
+        # generate random read positions
+        if randomize:
+            shuffle(offsets)
 
         took = []
         for i, offset in enumerate(offsets, 1):
