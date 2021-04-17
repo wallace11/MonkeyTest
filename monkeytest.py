@@ -158,8 +158,7 @@ class Benchmark:
                 print('Reading: {:.2f} %'.format((i + 1) * 100 / blocks_count),
                       end='\r')
             start = time()
-            os.lseek(f, offset, os.SEEK_SET)  # set position
-            buff = os.read(f, block_size)  # read from position
+            buff = os.pread(f, block_size, offset)  # read from position
             t = time() - start
             if not buff:
                 break  # if EOF reached
