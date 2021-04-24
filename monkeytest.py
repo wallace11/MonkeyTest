@@ -125,7 +125,8 @@ class Benchmark:
         of blocks_count, each at size of block_size bytes to disk.
         Function returns a list of write times in sec of each block.
         '''
-        f = os.open(self.file, flags=os.O_CREAT | os.O_WRONLY | os.O_SYNC)  # low-level I/O
+        f = os.open(self.file,
+                    flags=os.O_CREAT | os.O_WRONLY | os.O_SYNC)  # low-level I/O
 
         took = []
         for i in range(blocks_count):
@@ -142,14 +143,15 @@ class Benchmark:
         self.clear_line()
         return took
 
-    def read_test(self, block_size, blocks_count, show_progress=True, randomize=True):
+    def read_test(self, block_size, blocks_count,
+                  show_progress=True, randomize=True):
         '''
         Performs read speed test by reading random offset blocks from
         file, at maximum of blocks_count, each at size of block_size
         bytes until the End Of File reached.
         Returns a list of read times in sec of each block.
         '''
-        flags = os.O_RDONLY;
+        flags = os.O_RDONLY
         if not self.is_tmpfs:
             flags |= os.O_DIRECT
         f = os.open(self.file, flags=flags)  # low-level I/O
@@ -169,8 +171,6 @@ class Benchmark:
             start = time()
             buff = os.pread(f, block_size, offset)  # read from position
             t = time() - start
-            if not buff:
-                break  # if EOF reached
             took.append(t)
 
         os.close(f)
