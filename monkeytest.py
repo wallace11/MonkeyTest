@@ -103,7 +103,7 @@ class Benchmark:
 
     @staticmethod
     def clear_line():
-        print('\033[2K', end='')
+        print('\033[2K', end='', file=sys.stderr)
 
     @property
     def is_tmpfs(self):
@@ -131,7 +131,7 @@ class Benchmark:
         for i in range(blocks_count):
             if show_progress:
                 print('Writing: {:.2f} %'.format((i + 1) * 100 / blocks_count),
-                      end='\r')
+                      end='\r', file=sys.stderr)
             buff = bytearray(block_size)
             start = time()
             os.write(f, buff)
@@ -166,6 +166,7 @@ class Benchmark:
             if show_progress:
                 print('Reading: {:.2f} %'.format((i + 1) * 100 / blocks_count),
                       end='\r')
+                      end='\r', file=sys.stderr)
             start = time()
             buff = os.pread(f, block_size, offset)  # read from position
             t = time() - start
