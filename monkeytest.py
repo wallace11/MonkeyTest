@@ -11,12 +11,14 @@ and deleted, so the script doesn't waste your drive
     you need, cause it'll be overwritten during test
 '''
 
-import re
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from random import shuffle
 from time import perf_counter as time
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import json
 import os
+import re
+import shutil
 import sys
 import tempfile
 
@@ -112,6 +114,11 @@ class Benchmark:
     def convert_results(result, ndigits=2):
         return round(result / 1024 ** 2, ndigits)
 
+    @staticmethod
+    def force_cache_drop():
+        with open('/proc/sys/vm/drop_caches', 'w') as c:
+            c.write('1')
+
     def write_test(self, block_size, blocks_count, show_progress=True):
         '''
         Tests write speed by writing random blocks, at total quantity
@@ -202,6 +209,15 @@ class Benchmark:
 
 
 def main():
+    if os.geteuid() != 0:
+        sudo_path = shutil.which('sudo')
+        print(f'Script must run as root. Relaunching with {sudo_path}',
+              file=sys.stderr)
+        os.execl(sudo_path,
+                 sys.executable,
+                 os.path.abspath(sys.argv[0]),
+                 *sys.argv[1:])
+
     args = get_args()
     benchmark = Benchmark(file=args.file,
                           write=args.size,
