@@ -164,8 +164,7 @@ class Benchmark:
         took = []
         for i, offset in enumerate(offsets, 1):
             if show_progress:
-                print('Reading: {:.2f} %'.format((i + 1) * 100 / blocks_count),
-                      end='\r')
+                print('Reading: {:.2f} %'.format(i * 100 / blocks_count),
                       end='\r', file=sys.stderr)
             start = time()
             buff = os.pread(f, block_size, offset)  # read from position
