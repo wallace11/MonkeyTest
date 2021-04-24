@@ -103,7 +103,7 @@ class Benchmark:
 
     @staticmethod
     def clear_line():
-        print('\033[2K', end='', file=sys.stderr)
+        print('\033[2K\r', end='', file=sys.stderr)
 
     @property
     def is_tmpfs(self):
