@@ -220,17 +220,27 @@ def main():
                  os.path.abspath(sys.argv[0]),
                  *sys.argv[1:])
 
-    args = get_args()
-    benchmark = Benchmark(file=args.file,
-                          write=args.size,
-                          write_block=args.write_block_size,
-                          read_block=args.read_block_size)
+    try:
+        args = get_args()
+        benchmark = Benchmark(file=args.file,
+                              write=args.size,
+                              write_block=args.write_block_size,
+                              read_block=args.read_block_size)
 
-    if args.json is not None:
-        benchmark.get_json_result(args.json)
-    else:
-        benchmark.print_result()
-    os.remove(args.file)
+        if args.json is not None:
+            benchmark.get_json_result(args.json)
+        else:
+            benchmark.print_result()
+    except KeyboardInterrupt:
+        Benchmark.clear_line()
+        print('Aborting...', file=sys.stderr)
+        sys.exit(130)
+    finally:
+        try:
+            os.remove(args.file)
+        except PermissionError:
+            print('Could not remove {}'.format(args.file))
+            sys.exit(os.EX_NOPERM)
 
 
 if __name__ == '__main__':
