@@ -94,8 +94,8 @@ class Benchmark:
     def __init__(self, file, write, write_block, read_block):
         self.file = file
         self.write = write
-        self.write_block = write_block
-        self.read_block = read_block
+        self.write_block, self.read_block = map(lambda x: min(x, self.write),
+                                                (write_block, read_block))
         wr_blocks, rd_blocks = map(lambda x: int(self.write / x),
                                    (self.write_block, self.read_block))
         self.write_results = self.write_test(self.write_block, wr_blocks)
