@@ -159,6 +159,8 @@ class Benchmark:
         if randomize:
             shuffle(offsets)
 
+        self.force_cache_drop()
+
         took = []
         for i, offset in enumerate(offsets, 1):
             if show_progress:
