@@ -96,10 +96,6 @@ class Benchmark:
         self.write = write
         self.write_block, self.read_block = map(lambda x: min(x, self.write),
                                                 (write_block, read_block))
-        wr_blocks, rd_blocks = map(lambda x: int(self.write / x),
-                                   (self.write_block, self.read_block))
-        self.write_results = self.write_test(self.write_block, wr_blocks)
-        self.read_results = self.read_test(self.read_block, rd_blocks)
 
     @staticmethod
     def clear_line():
@@ -118,6 +114,14 @@ class Benchmark:
     def force_cache_drop():
         with open('/proc/sys/vm/drop_caches', 'w') as c:
             c.write('1')
+
+    def run(self):
+        wr_blocks, rd_blocks = map(lambda x: int(self.write / x),
+                                   (self.write_block, self.read_block))
+        self.write_results = self.write_test(self.write_block, wr_blocks)
+        self.read_results = self.read_test(self.read_block, rd_blocks)
+
+        return True
 
     def write_test(self, block_size, blocks_count, show_progress=True):
         '''
@@ -226,6 +230,7 @@ def main():
                               write=args.size,
                               write_block=args.write_block_size,
                               read_block=args.read_block_size)
+        benchmark.run()
 
         if args.json is not None:
             benchmark.get_json_result(args.json)
