@@ -91,9 +91,13 @@ def get_args():
 
 class Benchmark:
 
-    def __init__(self, file, write, write_block, read_block):
+    def __init__(self, file, write, write_block, read_block=None):
         self.file = file
         self.write = write
+
+        if not read_block:
+            read_block = write_block
+
         self.write_block, self.read_block = map(lambda x: min(x, self.write),
                                                 (write_block, read_block))
 
