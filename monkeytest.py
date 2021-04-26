@@ -63,9 +63,9 @@ def get_args():
     }
     parser = ArgumentParser(description='Arguments',
                             formatter_class=ArgumentDefaultsHelpFormatter)
-    parser.add_argument('-f', '--file',
-                        default='/tmp/monkeytest',
-                        help='The file to read/write to',
+    parser.add_argument('-p', '--path',
+                        default='/tmp',
+                        help='The path for benchmarking',
                         **common_params)
     parser.add_argument('-s', '--size',
                         type=str_to_bytes,
@@ -86,13 +86,18 @@ def get_args():
                         help='Output to json file',
                         **common_params)
     args = parser.parse_args()
+
+    if not os.path.isdir(args.path):
+        parser.error('-p/--path must be a directory')
+
     return args
 
 
 class Benchmark:
 
-    def __init__(self, file, size, write_block, read_block=None):
-        self.file = file
+    def __init__(self, path, size, write_block, read_block=None):
+        self.path = os.path.abspath(path)
+        _, self.file = tempfile.mkstemp(dir=self.path)
         self.size = size
 
         if not read_block:
@@ -108,7 +113,7 @@ class Benchmark:
     @property
     def is_tmpfs(self):
         tmpfs = tempfile.gettempdir()
-        return os.path.commonpath([os.path.abspath(self.file), tmpfs]) == tmpfs
+        return os.path.commonpath([self.path, tmpfs]) == tmpfs
 
     @staticmethod
     def convert_results(result, ndigits=2):
@@ -230,7 +235,7 @@ def main():
 
     try:
         args = get_args()
-        benchmark = Benchmark(file=args.file,
+        benchmark = Benchmark(path=args.path,
                               size=args.size,
                               write_block=args.write_block_size,
                               read_block=args.read_block_size)
@@ -246,10 +251,12 @@ def main():
         sys.exit(130)
     finally:
         try:
-            os.remove(args.file)
+            os.remove(benchmark.file)
         except PermissionError:
             print('Could not remove {}'.format(args.file))
             sys.exit(os.EX_NOPERM)
+        except UnboundLocalError:
+            sys.exit(os.EX_OSFILE)
 
 
 if __name__ == '__main__':
