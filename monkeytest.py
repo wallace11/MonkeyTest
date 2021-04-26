@@ -91,14 +91,14 @@ def get_args():
 
 class Benchmark:
 
-    def __init__(self, file, write, write_block, read_block=None):
+    def __init__(self, file, size, write_block, read_block=None):
         self.file = file
-        self.write = write
+        self.size = size
 
         if not read_block:
             read_block = write_block
 
-        self.write_block, self.read_block = map(lambda x: min(x, self.write),
+        self.write_block, self.read_block = map(lambda x: min(x, self.size),
                                                 (write_block, read_block))
 
     @staticmethod
@@ -120,7 +120,7 @@ class Benchmark:
             c.write('1')
 
     def run(self):
-        wr_blocks, rd_blocks = map(lambda x: int(self.write / x),
+        wr_blocks, rd_blocks = map(lambda x: int(self.size / x),
                                    (self.write_block, self.read_block))
         self.write_results = self.write_test(self.write_block, wr_blocks)
         self.read_results = self.read_test(self.read_block, rd_blocks)
@@ -188,15 +188,15 @@ class Benchmark:
     @property
     def results(self):
         return {
-            'written_mb': self.convert_results(self.write, 0),
+            'written_mb': self.convert_results(self.size, 0),
             'write_time': round(sum(self.write_results), 4),
-            'write_speed': self.convert_results(self.write / sum(self.write_results)),
+            'write_speed': self.convert_results(self.size / sum(self.write_results)),
             'write_speed_min': self.convert_results(self.write_block / max(self.write_results)),
             'write_speed_max': self.convert_results(self.write_block / min(self.write_results)),
             'read_blocks': len(self.read_results),
             'block_size': self.read_block,
             'read_time': round(sum(self.read_results), 4),
-            'read_speed': self.convert_results(self.write / sum(self.read_results)),
+            'read_speed': self.convert_results(self.size / sum(self.read_results)),
             'read_speed_max': self.convert_results(self.read_block / min(self.read_results)),
             'read_speed_min': self.convert_results(self.read_block / max(self.read_results))
         }
@@ -231,7 +231,7 @@ def main():
     try:
         args = get_args()
         benchmark = Benchmark(file=args.file,
-                              write=args.size,
+                              size=args.size,
                               write_block=args.write_block_size,
                               read_block=args.read_block_size)
         benchmark.run()
